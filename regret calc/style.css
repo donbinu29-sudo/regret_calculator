@@ -1,0 +1,942 @@
+/* ============================================================
+   APPLE DESIGN SYSTEM (macOS & iOS Dark Mode)
+   ============================================================ */
+:root {
+  --apple-bg: #06070a;
+  --apple-window: rgba(16, 17, 22, 0.5);
+  --apple-card: rgba(22, 23, 30, 0.65);
+  --apple-card-hover: rgba(32, 33, 42, 0.75);
+  --apple-border: rgba(255, 255, 255, 0.1);
+  --apple-border-light: rgba(255, 255, 255, 0.22);
+  --apple-text: #ffffff;
+  --apple-text-secondary: rgba(235, 235, 245, 0.72);
+  --apple-text-tertiary: rgba(235, 235, 245, 0.45);
+  --apple-blue: #0a84ff;
+  --apple-blue-hover: #0071e3;
+  --apple-blue-glow: rgba(10, 132, 255, 0.35);
+  --apple-green: #30d158;
+  --apple-red: #ff453a;
+  --apple-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --apple-font-mono: "SF Mono", Monaco, Menlo, monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  background-color: var(--apple-bg);
+  color: var(--apple-text);
+  font-family: var(--apple-font);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================
+   CINEMATIC AMBIENT MESH BACKGROUND (REFERENCE MATCHED)
+   ============================================================ */
+.bg-wrapper {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  background: #06070a;
+  transition: background 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#particleCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 4;
+}
+
+/* Ambient Horizon Glow Layer */
+.glow-horizon {
+  position: absolute;
+  bottom: -15vh;
+  left: 0;
+  right: 0;
+  height: 75vh;
+  background: radial-gradient(
+    ellipse 130% 65% at 50% 100%,
+    rgba(67, 56, 202, 0.35) 0%,
+    rgba(30, 27, 75, 0.15) 50%,
+    transparent 80%
+  );
+  filter: blur(65px);
+  pointer-events: none;
+  transition: all 1.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Base Mesh Orbs */
+.glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(85px);
+  pointer-events: none;
+  transition: all 1.8s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity, background;
+}
+
+/* Left: Vibrant Electric Blue Bloom (from reference) */
+.orb-blue {
+  width: 58vw;
+  height: 54vh;
+  bottom: -15vh;
+  left: -8vw;
+  background: radial-gradient(
+    circle at 45% 65%,
+    rgba(14, 116, 255, 0.8) 0%,
+    rgba(37, 99, 235, 0.6) 35%,
+    rgba(29, 78, 216, 0.25) 65%,
+    transparent 85%
+  );
+  opacity: 0.85;
+  animation: floatOrbLeft 22s ease-in-out infinite alternate;
+}
+
+/* Center-Right: Radiant Violet / Lavender Bloom (from reference) */
+.orb-purple {
+  width: 64vw;
+  height: 56vh;
+  bottom: -16vh;
+  right: -6vw;
+  background: radial-gradient(
+    circle at 55% 65%,
+    rgba(168, 85, 247, 0.7) 0%,
+    rgba(192, 132, 252, 0.5) 30%,
+    rgba(126, 34, 206, 0.22) 65%,
+    transparent 85%
+  );
+  opacity: 0.85;
+  animation: floatOrbRight 26s ease-in-out infinite alternate;
+}
+
+/* Center Accent: Soft Magenta / Lilac Mist Core */
+.orb-magenta {
+  width: 46vw;
+  height: 42vh;
+  bottom: -12vh;
+  left: 30vw;
+  background: radial-gradient(
+    circle at 50% 55%,
+    rgba(217, 70, 239, 0.45) 0%,
+    rgba(147, 51, 234, 0.25) 45%,
+    transparent 75%
+  );
+  opacity: 0.75;
+  animation: floatOrbCenter 18s ease-in-out infinite alternate;
+}
+
+/* Top Vignette (Deep pitch-black obsidian fade at top) */
+.bg-vignette {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(6, 7, 10, 0.96) 0%,
+    rgba(6, 7, 10, 0.65) 35%,
+    rgba(6, 7, 10, 0.15) 70%,
+    rgba(6, 7, 10, 0) 100%
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Subtle Film Noise Texture */
+.bg-noise {
+  position: absolute;
+  inset: 0;
+  opacity: 0.032;
+  pointer-events: none;
+  z-index: 3;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* Floating Keyframes for organic breathing motion */
+@keyframes floatOrbLeft {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(3vw, -4vh) scale(1.08); }
+  100% { transform: translate(-2vw, 2vh) scale(0.96); }
+}
+
+@keyframes floatOrbRight {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-3vw, -5vh) scale(1.06); }
+  100% { transform: translate(2vw, 3vh) scale(0.95); }
+}
+
+@keyframes floatOrbCenter {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(1vw, -3vh) scale(1.12); }
+  100% { transform: translate(-2vw, 2vh) scale(0.92); }
+}
+
+/* ============================================================
+   DYNAMIC REGRET SEVERITY ADAPTATIONS
+   ============================================================ */
+/* Critical Severity (Score >= 75): Fiery Crimson & Furnace Ember */
+.bg-wrapper.hot {
+  background: #0d0406;
+}
+.bg-wrapper.hot .glow-horizon {
+  background: radial-gradient(
+    ellipse 130% 65% at 50% 100%,
+    rgba(185, 28, 28, 0.45) 0%,
+    rgba(127, 29, 29, 0.22) 50%,
+    transparent 80%
+  );
+}
+.bg-wrapper.hot .orb-blue {
+  background: radial-gradient(
+    circle at 45% 65%,
+    rgba(255, 69, 58, 0.85) 0%,
+    rgba(220, 38, 38, 0.65) 35%,
+    rgba(153, 27, 27, 0.3) 65%,
+    transparent 85%
+  );
+  opacity: 0.9;
+}
+.bg-wrapper.hot .orb-purple {
+  background: radial-gradient(
+    circle at 55% 65%,
+    rgba(255, 107, 0, 0.75) 0%,
+    rgba(234, 88, 12, 0.55) 30%,
+    rgba(194, 65, 12, 0.25) 65%,
+    transparent 85%
+  );
+  opacity: 0.9;
+}
+.bg-wrapper.hot .orb-magenta {
+  background: radial-gradient(
+    circle at 50% 55%,
+    rgba(244, 63, 94, 0.6) 0%,
+    rgba(225, 29, 72, 0.35) 45%,
+    transparent 75%
+  );
+  opacity: 0.85;
+}
+
+/* Moderate Severity (Score 45 - 74): Deep Indigo & Neon Amethyst */
+.bg-wrapper.moderate {
+  background: #06060e;
+}
+.bg-wrapper.moderate .glow-horizon {
+  background: radial-gradient(
+    ellipse 130% 65% at 50% 100%,
+    rgba(79, 70, 229, 0.45) 0%,
+    rgba(49, 46, 129, 0.22) 50%,
+    transparent 80%
+  );
+}
+.bg-wrapper.moderate .orb-blue {
+  background: radial-gradient(
+    circle at 45% 65%,
+    rgba(10, 132, 255, 0.8) 0%,
+    rgba(99, 102, 241, 0.6) 35%,
+    rgba(67, 56, 202, 0.28) 65%,
+    transparent 85%
+  );
+  opacity: 0.88;
+}
+.bg-wrapper.moderate .orb-purple {
+  background: radial-gradient(
+    circle at 55% 65%,
+    rgba(147, 51, 234, 0.75) 0%,
+    rgba(168, 85, 247, 0.5) 30%,
+    rgba(107, 33, 168, 0.22) 65%,
+    transparent 85%
+  );
+  opacity: 0.88;
+}
+.bg-wrapper.moderate .orb-magenta {
+  background: radial-gradient(
+    circle at 50% 55%,
+    rgba(124, 58, 237, 0.5) 0%,
+    rgba(91, 33, 182, 0.3) 45%,
+    transparent 75%
+  );
+  opacity: 0.8;
+}
+
+/* Mild Severity (Score < 45): Emerald Aurora & Arctic Cyan Relief */
+.bg-wrapper.mild {
+  background: #040807;
+}
+.bg-wrapper.mild .glow-horizon {
+  background: radial-gradient(
+    ellipse 130% 65% at 50% 100%,
+    rgba(16, 185, 129, 0.4) 0%,
+    rgba(6, 95, 70, 0.2) 50%,
+    transparent 80%
+  );
+}
+.bg-wrapper.mild .orb-blue {
+  background: radial-gradient(
+    circle at 45% 65%,
+    rgba(16, 185, 129, 0.8) 0%,
+    rgba(5, 150, 105, 0.55) 35%,
+    rgba(4, 120, 87, 0.25) 65%,
+    transparent 85%
+  );
+  opacity: 0.88;
+}
+.bg-wrapper.mild .orb-purple {
+  background: radial-gradient(
+    circle at 55% 65%,
+    rgba(6, 182, 212, 0.75) 0%,
+    rgba(14, 165, 233, 0.5) 30%,
+    rgba(3, 105, 161, 0.22) 65%,
+    transparent 85%
+  );
+  opacity: 0.88;
+}
+.bg-wrapper.mild .orb-magenta {
+  background: radial-gradient(
+    circle at 50% 55%,
+    rgba(52, 211, 153, 0.5) 0%,
+    rgba(16, 185, 129, 0.3) 45%,
+    transparent 75%
+  );
+  opacity: 0.8;
+}
+
+/* ============================================================
+   macOS WINDOW APP SHELL
+   ============================================================ */
+.apple-window {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background: transparent;
+}
+
+/* Titlebar */
+.window-titlebar {
+  height: 52px;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  background: rgba(10, 11, 16, 0.68);
+  backdrop-filter: blur(40px) saturate(190%);
+  -webkit-backdrop-filter: blur(40px) saturate(190%);
+  border-bottom: 1px solid var(--apple-border);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+.traffic-lights {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.light {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  position: relative;
+  box-shadow: inset 0 0 1px rgba(0, 0, 0, 0.4);
+}
+
+.light.close { background: #ff5f56; border: 1px solid #e0443e; }
+.light.minimize { background: #ffbd2e; border: 1px solid #dea123; }
+.light.expand { background: #27c93f; border: 1px solid #1aab29; }
+
+.window-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+  letter-spacing: -0.015em;
+}
+
+.titlebar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.apple-btn-subtle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--apple-border);
+  color: #ffffff;
+  padding: 6px 13px;
+  border-radius: 980px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  backdrop-filter: blur(10px);
+}
+
+.apple-btn-subtle:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: var(--apple-border-light);
+}
+
+.engine-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--apple-blue);
+}
+
+.engine-dot.active {
+  background: var(--apple-green);
+  box-shadow: 0 0 6px var(--apple-green);
+}
+
+/* ============================================================
+   macOS SPLIT CONTENT VIEW
+   ============================================================ */
+.window-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 0;
+}
+
+.window-pane {
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px;
+}
+
+.pane-input {
+  border-right: 1px solid var(--apple-border);
+  background: rgba(12, 13, 18, 0.38);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+}
+
+.pane-output {
+  background: rgba(8, 9, 14, 0.48);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+}
+
+.pane-content {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Spotlight Style Input Card */
+.input-card {
+  background: rgba(20, 21, 28, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  padding: 16px 18px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 16px 36px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s ease;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.input-card:focus-within {
+  border-color: var(--apple-blue);
+  background: rgba(26, 27, 36, 0.75);
+  box-shadow: 0 0 0 3px var(--apple-blue-glow), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+textarea {
+  width: 100%;
+  height: 95px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--apple-text);
+  font-size: 15px;
+  line-height: 1.5;
+  resize: none;
+  font-family: inherit;
+  letter-spacing: -0.01em;
+}
+
+textarea::placeholder {
+  color: var(--apple-text-tertiary);
+}
+
+/* Apple Capsule Presets */
+.presets-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 18px;
+}
+
+.preset-chip {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--apple-border);
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 7px 14px;
+  border-radius: 980px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.preset-chip:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: var(--apple-border-light);
+  transform: translateY(-1px);
+}
+
+.preset-chip:active {
+  transform: scale(0.98);
+}
+
+/* Primary Apple Action Button */
+.apple-btn-primary {
+  background: var(--apple-blue);
+  color: #ffffff;
+  border: none;
+  padding: 13px 20px;
+  border-radius: 980px;
+  font-size: 14.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 16px var(--apple-blue-glow), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: all 0.15s ease;
+}
+
+.apple-shortcut {
+  background: rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+  padding: 3px 7px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-family: var(--apple-font-mono);
+  font-weight: 600;
+}
+
+.apple-btn-primary:hover {
+  background: var(--apple-blue-hover);
+  box-shadow: 0 6px 20px rgba(10, 132, 255, 0.45);
+}
+
+.apple-btn-primary:active {
+  transform: scale(0.98);
+}
+
+.apple-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--apple-text-secondary);
+}
+
+.apple-icon-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--apple-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  color: var(--apple-text-secondary);
+}
+
+.empty-state p {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--apple-text-secondary);
+}
+
+/* Readout & Telemetry Widget */
+.readout-content {
+  display: none;
+  width: 100%;
+  animation: appleFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.readout-content.show {
+  display: block;
+}
+
+.apple-widget {
+  background: rgba(36, 36, 42, 0.6);
+  border: 1px solid var(--apple-border);
+  border-radius: 20px;
+  padding: 24px 20px 20px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 20px 40px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+}
+
+.gauge-box {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.gauge-svg {
+  width: 250px;
+  height: 135px;
+  display: block;
+}
+
+#gaugeFillArc {
+  transition: stroke-dashoffset 1.1s cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+
+.gauge-svg.sweeping #needle {
+  animation: needleSweep 0.85s ease-in-out infinite;
+  transform-origin: 140px 135px;
+}
+
+@keyframes needleSweep {
+  0% { transform: rotate(-90deg); }
+  50% { transform: rotate(90deg); }
+  100% { transform: rotate(-90deg); }
+}
+
+.meter-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 14px;
+  width: 100%;
+}
+
+.score-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 2px;
+}
+
+.score-display {
+  font-size: 50px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.score-unit {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--apple-blue);
+}
+
+.verdict {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--apple-blue);
+  margin-top: 6px;
+  text-align: center;
+  letter-spacing: -0.01em;
+}
+
+/* Apple Inset Grouped Reasons */
+.reasons-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.reasons-list li {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: #ffffff;
+  font-weight: 500;
+  padding: 12px 16px;
+  background: rgba(44, 44, 50, 0.45);
+  border: 1px solid var(--apple-border);
+  border-left: 3px solid var(--apple-blue);
+  border-radius: 12px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* Coping Section */
+.cope-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.apple-btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--apple-border);
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: 980px;
+  font-size: 12.5px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: all 0.15s ease;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.apple-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: var(--apple-border-light);
+}
+
+.cope-box {
+  display: none;
+  background: rgba(44, 44, 50, 0.55);
+  border: 1px solid var(--apple-border);
+  border-left: 3px solid var(--apple-blue);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: #ffffff;
+  font-weight: 500;
+  animation: appleFadeIn 0.2s ease forwards;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.cope-box.show {
+  display: block;
+}
+
+/* Apple Settings Modal Sheet */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 100;
+}
+
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 400px;
+  background: rgba(36, 36, 42, 0.88);
+  border: 1px solid var(--apple-border-light);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.modal-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.close-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--apple-border);
+  color: var(--apple-text-secondary);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.env-status-banner {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--apple-border);
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-family: var(--apple-font-mono);
+  color: #ffffff;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.form-group select,
+.form-group input {
+  width: 100%;
+  background: rgba(20, 20, 24, 0.8);
+  border: 1px solid var(--apple-border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #ffffff;
+  font-size: 13.5px;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.form-group select:focus,
+.form-group input:focus {
+  border-color: var(--apple-blue);
+  box-shadow: 0 0 0 3px var(--apple-blue-glow);
+}
+
+.api-hint {
+  font-size: 11.5px;
+  color: var(--apple-text-secondary);
+}
+
+.api-hint code {
+  font-family: var(--apple-font-mono);
+  color: var(--apple-blue);
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-cancel {
+  background: transparent;
+  border: 1px solid var(--apple-border);
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: 980px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.btn-save {
+  background: var(--apple-blue);
+  color: #ffffff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 980px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-save:hover {
+  background: var(--apple-blue-hover);
+}
+
+@keyframes appleFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+@media (max-width: 860px) {
+  html, body {
+    overflow-y: auto;
+    height: auto;
+  }
+  .apple-window {
+    height: auto;
+    min-height: 100vh;
+  }
+  .window-body {
+    grid-template-columns: 1fr;
+  }
+  .pane-input {
+    border-right: none;
+    border-bottom: 1px solid var(--apple-border);
+    padding: 30px 20px;
+  }
+  .pane-output {
+    padding: 30px 20px;
+    min-height: 480px;
+  }
+  .window-titlebar {
+    padding: 0 16px;
+  }
+}

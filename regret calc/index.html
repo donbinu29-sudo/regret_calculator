@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Regret Calculator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Ambient Horizon Glow Mesh (Reference Matched) -->
+<div class="bg-wrapper" id="bgWrapper">
+  <div class="glow-horizon"></div>
+  <div class="glow-orb orb-blue"></div>
+  <div class="glow-orb orb-purple"></div>
+  <div class="glow-orb orb-magenta"></div>
+  <div class="bg-vignette"></div>
+  <div class="bg-noise"></div>
+  <canvas id="particleCanvas"></canvas>
+</div>
+
+<!-- macOS App Shell -->
+<div class="apple-window">
+  <!-- macOS Window Titlebar -->
+  <header class="window-titlebar">
+    <div class="traffic-lights">
+      <span class="light close"></span>
+      <span class="light minimize"></span>
+      <span class="light expand"></span>
+    </div>
+    <div class="window-title">Regret Calculator</div>
+    <div class="titlebar-actions">
+      <button class="apple-btn-subtle" id="apiModalBtn">
+        <span class="engine-dot" id="engineDot"></span>
+        <span id="engineName">API Settings</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- macOS Split Content View -->
+  <main class="window-body">
+    <!-- Left Column: Input Sidebar / Workspace -->
+    <section class="window-pane pane-input">
+      <div class="pane-content">
+        
+        <!-- Apple Spotlight Style Input Field -->
+        <div class="input-card">
+          <textarea id="input" placeholder="What did you do? (e.g. texted my ex at 2am, replied-all to the whole company...)"></textarea>
+        </div>
+
+        <!-- Apple Capsule Pills -->
+        <div class="presets-container" id="presets"></div>
+
+        <!-- Primary Apple Action Button -->
+        <button class="apple-btn-primary" id="runBtn">
+          <span>Calculate Regret</span>
+          <kbd class="apple-shortcut">⌘↵</kbd>
+        </button>
+      </div>
+    </section>
+
+    <!-- Right Column: Results & Telemetry Widget -->
+    <section class="window-pane pane-output">
+      <div class="pane-content">
+        <!-- Idle Placeholder -->
+        <div class="empty-state" id="emptyState">
+          <div class="apple-icon-circle">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </div>
+          <p>Awaiting your decision</p>
+        </div>
+
+        <!-- Active Readout Widget -->
+        <div class="readout-content" id="readout">
+          
+          <div class="apple-widget" id="meterCard">
+            <div class="gauge-box">
+              <svg viewBox="0 0 280 150" id="gaugeSvg" class="gauge-svg">
+                <defs>
+                  <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#30d158"/>
+                    <stop offset="35%" stop-color="#0a84ff"/>
+                    <stop offset="70%" stop-color="#5e5ce6"/>
+                    <stop offset="88%" stop-color="#ff375f"/>
+                    <stop offset="100%" stop-color="#ff453a"/>
+                  </linearGradient>
+                </defs>
+
+                <!-- Track Background -->
+                <path d="M 40 135 A 100 100 0 0 1 240 135" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-width="12" stroke-linecap="round"/>
+                
+                <!-- Tick Marks -->
+                <line x1="140" y1="38" x2="140" y2="45" stroke="rgba(255, 255, 255, 0.2)" stroke-width="2" transform="rotate(-90 140 135)"/>
+                <line x1="140" y1="40" x2="140" y2="45" stroke="rgba(255, 255, 255, 0.1)" stroke-width="1.5" transform="rotate(-67.5 140 135)"/>
+                <line x1="140" y1="38" x2="140" y2="45" stroke="rgba(255, 255, 255, 0.2)" stroke-width="2" transform="rotate(-45 140 135)"/>
+                <line x1="140" y1="40" x2="140" y2="45" stroke="rgba(255, 255, 255, 0.1)" stroke-width="1.5" transform="rotate(-22.5 140 135)"/>
+                <line x1="140" y1="35" x2="140" y2="45" stroke="rgba(255, 255, 255, 0.4)" stroke-width="2.5" transform="rotate(0 140 135)"/>
+                <line x1="140" y1="40" x2="140" y2="45" stroke="rgba(255, 255, 255, 0.1)" stroke-width="1.5" transform="rotate(22.5 140 135)"/>
+                <line x1="140" y1="38" x2="140" y2="45" stroke="rgba(255, 255, 255, 0.2)" stroke-width="2" transform="rotate(45 140 135)"/>
+                <line x1="140" y1="40" x2="140" y2="45" stroke="rgba(255, 255, 255, 0.1)" stroke-width="1.5" transform="rotate(67.5 140 135)"/>
+                <line x1="140" y1="38" x2="140" y2="45" stroke="rgba(255, 255, 255, 0.2)" stroke-width="2" transform="rotate(90 140 135)"/>
+
+                <!-- Active Fill Arc -->
+                <path id="gaugeFillArc" d="M 40 135 A 100 100 0 0 1 240 135" fill="none" stroke="url(#gaugeGrad)" stroke-width="12" stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="314.16"/>
+
+                <!-- Needle Indicator -->
+                <line id="needle" x1="140" y1="135" x2="140" y2="44" stroke="#ffffff" stroke-width="3" stroke-linecap="round" transform="rotate(-90 140 135)"/>
+
+                <!-- Center Pivot -->
+                <circle cx="140" cy="135" r="9" fill="#1c1c1e" stroke="rgba(255, 255, 255, 0.25)" stroke-width="2"/>
+                <circle cx="140" cy="135" r="5" fill="#0a84ff" id="pivotDot"/>
+              </svg>
+            </div>
+
+            <!-- Score & Verdict Display -->
+            <div class="meter-info">
+              <div class="score-row">
+                <span class="score-display" id="scoreNum">0</span>
+                <span class="score-unit">%</span>
+              </div>
+              <div class="verdict" id="verdictText"></div>
+            </div>
+          </div>
+
+          <!-- Apple Style Inset Grouped Reasons -->
+          <ul class="reasons-list" id="reasonsList"></ul>
+
+          <!-- Coping Section -->
+          <div class="cope-section">
+            <button class="apple-btn-secondary" id="copeBtn">Coping Advice</button>
+            <div class="cope-box" id="copeBox"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Apple macOS Style Settings Modal Sheet -->
+<div class="modal-overlay" id="apiModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2>API Configuration</h2>
+      <button class="close-btn" id="closeModalBtn" aria-label="Close">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="env-status-banner" id="envStatusBanner">
+        <span id="envStatusText">Checking configuration...</span>
+      </div>
+
+      <div class="form-group">
+        <label for="apiProvider">AI Provider</label>
+        <select id="apiProvider">
+          <option value="gemini">Google Gemini (Free tier)</option>
+          <option value="claude">Anthropic Claude</option>
+          <option value="openai">OpenAI (ChatGPT)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="apiKeyInput">API Key</label>
+        <input type="password" id="apiKeyInput" placeholder="Paste key or keep in .env">
+        <div class="api-hint">
+          Saved in <code>.env</code> as <code>API_KEY=...</code>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" id="clearApiBtn">Reset to Offline</button>
+      <button class="btn-save" id="saveApiBtn">Done</button>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
